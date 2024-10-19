@@ -1,33 +1,34 @@
+// routes/teams.js
+
 const express = require('express');
 const router = express.Router();
-const Team = require('../models/Team');
-const Player = require('../models/Player');
+const Team = require('../models/Team'); // Assuming you have a Team model
 
-
+// POST /api/teams - Create a new team
 router.post('/', async (req, res) => {
   const { name, players } = req.body;
 
-  if (players.length > 11) {
-    return res.status(400).json({ message: 'You can only select up to 11 players' });
+  // Ensure the team has players
+  if (!players || players.length === 0) {
+    return res.status(400).json({ message: 'Team must have at least one player' });
   }
 
-  let totalPoints = 0;
-
   try {
-    const playerDocs = await Player.find({ '_id': { $in: players } });
-    totalPoints = playerDocs.reduce((acc, player) => acc + player.points, 0);
-
-    const team = new Team({ name, players, totalPoints });
-    await team.save();
-    res.status(201).json(team);
+    const newTeam = new Team({
+      name,
+      players
+    });
+    await newTeam.save();
+    res.status(201).json(newTeam);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// GET /api/teams/:id - Retrieve a specific team by ID
 router.get('/:id', async (req, res) => {
   try {
-    const team = await Team.findById(req.params.id).populate('players');
+    const team = await Team.findById(req.params.id);
     if (!team) return res.status(404).json({ message: 'Team not found' });
     res.json(team);
   } catch (err) {
